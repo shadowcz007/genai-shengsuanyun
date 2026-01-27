@@ -121,11 +121,11 @@ for await (const chunk of stream) {
 4. 回传 `FunctionResponse`
 
 ```typescript
-import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration } from '@google/genai';
+import { GoogleGenAI, FunctionCallingConfigMode } from '@google/genai';
 import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
 
 async function main() {
-  const controlLightDeclaration: FunctionDeclaration = {
+  const controlLightDeclaration = {
     name: 'controlLight',
     parametersJsonSchema: {
       type: 'object',
