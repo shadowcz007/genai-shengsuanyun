@@ -45,7 +45,7 @@ npm install genai-shengsuanyun
  
 2. **API Key 安全**  
    - 永远不要硬编码密钥。
-   - 默认从 `process.env.GEMINI_API_KEY` 读取。
+   - 默认从 `process.env.SSY_API_KEY` 读取。
    - 若需用户输入，必须标注："⚠️ 仅限本地开发，切勿在生产前端暴露"。
 
 3. **模型命名规范**  
@@ -80,7 +80,7 @@ npm install genai-shengsuanyun
 import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
 
 const ai = new ExtendedGoogleGenAI({
-              apiKey: process.env.GEMINI_API_KEY 
+              apiKey: process.env.SSY_API_KEY 
           });
 
 const response = await ai.models.generateContent({
@@ -97,7 +97,7 @@ console.log(response.text);
 import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
 
 const ai = new ExtendedGoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY 
+  apiKey: process.env.SSY_API_KEY 
 });
 
 const stream = await ai.models.generateContentStream({
@@ -137,7 +137,7 @@ async function main() {
     },
   };
 
-  const ai = new ExtendedGoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const ai = new ExtendedGoogleGenAI({ apiKey: process.env.SSY_API_KEY });
   const response = await ai.models.generateContent({
     model: 'google/gemini-2.5-flash',
     contents: '把灯调暗一点，让房间感觉温馨又温暖。',
@@ -160,7 +160,7 @@ main();
 #### MCP 支持（实验性）
 
 ```typescript
-import { GoogleGenAI } from '@google/genai';
+
 import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -172,7 +172,7 @@ const serverParams = new StdioClientTransport({
 });
 
 const client = new Client({ name: "example-client", version: "1.0.0" });
-const ai = new ExtendedGoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new ExtendedGoogleGenAI({ apiKey: process.env.SSY_API_KEY });
 
 await client.connect(serverParams);
 
@@ -194,10 +194,10 @@ await client.close();
 ### 错误处理
 
 ```typescript
-import { GoogleGenAI } from '@google/genai';
+ 
 import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
 
-const ai = new ExtendedGoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new ExtendedGoogleGenAI({ apiKey: process.env.SSY_API_KEY });
 
 await ai.models.generateContent({
   model: 'non-existent-model',
@@ -221,7 +221,7 @@ await ai.models.generateContent({
 - 默认选中 `google/gemini-2.5-flash`
 
 ### 2. API Key 管理
-- 默认值：`process.env.GEMINI_API_KEY`
+- 默认值：`process.env.SSY_API_KEY`
 - 可编辑输入框（password 类型 + 显示切换）
 - 安全警告文案
 
@@ -266,12 +266,11 @@ console.log(quota);
 
 ### 基础用法（跨平台）
 
-```typescript
-import { GoogleGenAI } from '@google/genai';
+```typescript 
 import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
 
 const ai = new ExtendedGoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
+  apiKey: process.env.SSY_API_KEY
 });
 
 // 获取支持的模型
