@@ -11,6 +11,13 @@
 
 使用从 [胜算云](https://www.shengsuanyun.com/?from=CH_X30T9465) 获取的 API 密钥
 
+### 获取更多支持
+
+本 SDK 由 shadow 开发，配合《驾驭Gemini 3 与Nano Banana ，人人都是AI产品创客》书籍使用。用于把 Gemini 修改为由胜算云提供接入。
+
+- 使用技巧可以查阅：https://codenow.wiki
+- 交流可加入 mixlab 社区
+
 ---
 
 ## 安装
@@ -26,6 +33,8 @@ npm install genai-shengsuanyun
 - **自定义 BaseURL**: 默认 baseURL 设置为 `https://router.shengsuanyun.com/api/`
 - **getSupportedModels()**: 获取支持的模型列表
 - **配额管理**: 通过 `quota.getQuota()` 查询配额/账单信息
+- **文生图扩展方法**: `generateImage()` - 简便的图像生成方法，返回 base64 图像和 token 统计
+- **文生JSON扩展方法**: `generateJson()` - 简便的 JSON 生成方法，返回解析后的 JSON 和 token 统计
 - **完整兼容性**: 扩展 `GoogleGenAI`，保留所有原始功能
 - **跨平台支持**: 支持 Node.js 和 Web/Browser 环境
 
@@ -129,7 +138,52 @@ for await (const chunk of stream) {
 
 ### 图像生成
 
-使用 `google/gemini-2.5-flash-image` 或 `google/gemini-3-pro-image-preview` 模型生成图像：
+使用 `generateImage` 扩展方法，传入模型和 prompt 即可返回图像的 base64 数据 URI 和 token 消耗统计：
+
+```typescript
+import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
+
+const ai = new ExtendedGoogleGenAI({ 
+  apiKey: process.env.SSY_API_KEY 
+});
+
+// 基于 JSON 数据构建提示词
+const data = {
+  title: '数据可视化报告',
+  subtitle: '2024 年度总结',
+  colorTheme: '蓝色渐变'
+};
+
+const prompt = `Create a high-quality, flat-design infographic poster image based on this data structure. 
+Style: Minimalist, professional, ${data.colorTheme} color scheme.
+Title: ${data.title}
+Subtitle: ${data.subtitle}
+Content Summary: ${JSON.stringify(data).slice(0, 1000)}...`; // 截断以避免超出 token 限制
+
+// 使用扩展方法生成图像
+const result = await ai.generateImage(
+  'google/gemini-2.5-flash-image', // 图像生成模型
+  prompt,
+  {
+    thinkingBudget: 1000  // 可选：思考预算，取值范围 512-24576
+  }
+);
+
+console.log('图像数据 URI:', result.imageBase64);
+console.log('Token 消耗统计:', result.usage);
+// 输出示例:
+// {
+//   totalTokenCount: 1234,
+//   promptTokenCount: 800,
+//   candidatesTokenCount: 434
+// }
+
+// 在浏览器中可以直接使用：<img src={result.imageBase64} />
+```
+
+#### 使用原生方法生成图像
+
+也可以使用原生 `generateContent` 方法进行更细粒度的控制：
 
 ```typescript
 import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
@@ -175,11 +229,73 @@ if (response.candidates?.[0]?.content?.parts) {
     }
   }
 }
+
+// 获取 token 使用统计
+if (response.usageMetadata) {
+  const totalTokens = response.usageMetadata.totalTokenCount;
+  const promptTokenCount = response.usageMetadata.promptTokenCount;
+  const candidatesTokenCount = response.usageMetadata.candidatesTokenCount;
+  
+  console.log(`总 Token 数: ${totalTokens}`);
+  console.log(`输入 Token 数: ${promptTokenCount}`);
+  console.log(`输出 Token 数: ${candidatesTokenCount}`);
+}
 ```
 
 ### JSON 输出
 
-使用 `responseMimeType` 和 `responseSchema` 让模型返回结构化的 JSON 数据：
+使用 `generateJson` 扩展方法，传入模型、prompt 和 JSON schema 定义，即可返回解析后的 JSON 对象和 token 消耗统计：
+
+```typescript
+import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
+import { Type } from '@google/genai';
+
+const ai = new ExtendedGoogleGenAI({ 
+  apiKey: process.env.SSY_API_KEY 
+});
+
+const prompt = `分析用户的技术情报偏好。输入是用户最近的点击、复制和编辑记录：
+[点击] React 性能优化
+[复制] TypeScript 最佳实践
+[编辑] Vue 3 组合式 API
+
+任务：
+1. 用一句话描述用户的"专业画像"（Persona）。
+2. 提取 10 个用户最关心的"核心技术关键词（中文）"，用于未来的内容推荐。
+
+仅返回 JSON 格式。`;
+
+// 使用扩展方法生成 JSON
+const result = await ai.generateJson(
+  'google/gemini-2.5-flash',
+  prompt,
+  {
+    type: Type.OBJECT,
+    properties: {
+      persona: { type: Type.STRING },
+      tags: { type: Type.ARRAY, items: { type: Type.STRING } }
+    }
+  },
+  {
+    thinkingBudget: 1000  // 可选：思考预算，取值范围 512-24576（整数）
+  }
+);
+
+console.log('JSON 结果:', result.json);
+// 输出示例: { persona: "前端开发工程师，专注于现代框架和性能优化", tags: ["React", "TypeScript", "Vue", ...] }
+
+console.log('Token 消耗统计:', result.usage);
+// 输出示例:
+// {
+//   totalTokenCount: 1234,
+//   promptTokenCount: 800,
+//   candidatesTokenCount: 434
+// }
+```
+
+#### 使用原生方法生成 JSON
+
+也可以使用原生 `generateContent` 方法进行更细粒度的控制：
 
 ```typescript
 import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
@@ -221,6 +337,17 @@ const response = await ai.models.generateContent({
 const result = JSON.parse(response.text.trim() || "{}");
 console.log(result);
 // 输出示例: { persona: "前端开发工程师，专注于现代框架和性能优化", tags: ["React", "TypeScript", "Vue", ...] }
+
+// 获取 token 使用统计
+if (response.usageMetadata) {
+  const totalTokens = response.usageMetadata.totalTokenCount;
+  const promptTokenCount = response.usageMetadata.promptTokenCount;
+  const candidatesTokenCount = response.usageMetadata.candidatesTokenCount;
+  
+  console.log(`总 Token 数: ${totalTokens}`);
+  console.log(`输入 Token 数: ${promptTokenCount}`);
+  console.log(`输出 Token 数: ${candidatesTokenCount}`);
+}
 ```
 
 > **思考预算（thinkingBudget）说明**：

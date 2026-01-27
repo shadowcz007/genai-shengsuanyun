@@ -1,18 +1,18 @@
 {
     "name": "genai-shengsuanyun",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Extended Google GenAI SDK with custom baseURL and additional methods",
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
-    "homepage": "https://github.com/shadow-ai/genai-shengsuanyun",
+    "homepage": "https://github.com/shadowcz007/genai-shengsuanyun",
     "repository": {
         "type": "git",
-        "url": "https://github.com/shadow-ai/genai-shengsuanyun.git"
+        "url": "https://github.com/shadowcz007/genai-shengsuanyun.git"
     },
     "bugs": {
-        "url": "https://github.com/shadow-ai/genai-shengsuanyun/issues"
+        "url": "https://github.com/shadowcz007/genai-shengsuanyun/issues"
     },
     "exports": {
         ".": {
