@@ -292,6 +292,13 @@
                     <small
                         style="color: #666; margin-top: 5px; display: block;">温度值范围：0.0-2.0。值越低输出越确定（推荐 0.1-0.3），值越高输出越随机（推荐 0.8-2.0）。留空使用默认值。</small>
                 </div>
+                <div class="input-group">
+                    <label for="streamThinkingBudget">思考预算 (可选):</label>
+                    <input type="number" id="streamThinkingBudget" min="0" max="10000" step="100" placeholder="1000"
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;" />
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">思考预算控制模型思考过程的 token 数量。值越大思考越深入，输出质量通常更好，但会消耗更多 token。推荐值：500-2000。留空则不使用思考功能。</small>
+                </div>
                 <button onclick="generateContentStream()">开始流式生成</button>
                 <div id="streamOutput" class="output"
                     style="display: none;"></div>
@@ -384,9 +391,55 @@
                     style="display: none;"></div>
             </div>
 
+            <!-- JSON 输出测试 -->
+            <div class="section">
+                <h2>9. JSON 输出测试</h2>
+                <p style="color: #666; margin-bottom: 15px;">使用 responseMimeType 和 responseSchema 让模型返回结构化的 JSON 数据</p>
+                <div class="input-group">
+                    <label for="jsonPrompt">提示词:</label>
+                    <textarea id="jsonPrompt" rows="6"
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical;"
+                        placeholder="请输入需要返回 JSON 的提示词">分析用户的技术情报偏好。输入是用户最近的点击、复制和编辑记录：
+[点击] React 性能优化
+[复制] TypeScript 最佳实践
+[编辑] Vue 3 组合式 API
+
+任务：
+1. 用一句话描述用户的"专业画像"（Persona）。
+2. 提取 10 个用户最关心的"核心技术关键词（中文）"，用于未来的内容推荐。
+
+仅返回 JSON 格式。</textarea>
+                </div>
+                <div class="input-group">
+                    <label for="jsonModel">模型:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="jsonModelSelect"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="google/gemini-2.5-flash" selected>google/gemini-2.5-flash</option>
+                            <option value>-- 选择模型或自定义输入 --</option>
+                            <option value="custom">[自定义输入]</option>
+                        </select>
+                        <input type="text" id="jsonModel" placeholder="留空使用默认模型"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; display: none;" />
+                    </div>
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">从支持的模型列表中选择，或选择"自定义输入"手动输入模型名称</small>
+                </div>
+                <div class="input-group">
+                    <label for="jsonThinkingBudget">思考预算 (可选):</label>
+                    <input type="number" id="jsonThinkingBudget" min="0" max="10000" step="100" placeholder="1000"
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;" />
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">思考预算控制模型思考过程的 token 数量。值越大思考越深入，输出质量通常更好，但会消耗更多 token。推荐值：500-2000。留空则不使用思考功能。</small>
+                </div>
+                <button onclick="testJsonOutput()">测试 JSON 输出</button>
+                <div id="jsonOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
             <!-- 测试 BaseURL -->
             <div class="section">
-                <h2>9. 验证 BaseURL</h2>
+                <h2>10. 验证 BaseURL</h2>
                 <p style="color: #666; margin-bottom: 15px;">验证默认 baseURL
                     是否正确设置为 shengsuanyun 路由</p>
                 <button onclick="checkBaseUrl()">检查 BaseURL</button>
@@ -406,6 +459,7 @@
 
         <script type="module">
         import { ExtendedGoogleGenAI, FunctionCallingConfigMode  } from './dist/web/index.js';
+        import { Type } from '@google/genai';
         
         let ai = null;
 
@@ -578,6 +632,8 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
             const prompt = document.getElementById('streamPrompt').value.trim();
             const modelSelect = document.getElementById('streamModelSelect');
             const modelInput = document.getElementById('streamModel');
+            const temperatureInput = document.getElementById('streamTemperature');
+            const thinkingBudgetInput = document.getElementById('streamThinkingBudget');
             
             // 获取选中的模型名称
             let modelName = '';
@@ -591,6 +647,14 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                 // 如果下拉列表为空，检查自定义输入框
                 modelName = modelInput.value.trim();
             }
+
+            // 获取温度值
+            const temperature = temperatureInput.value.trim();
+            const temperatureValue = temperature ? parseFloat(temperature) : undefined;
+
+            // 获取思考预算
+            const thinkingBudget = thinkingBudgetInput.value.trim();
+            const thinkingBudgetValue = thinkingBudget ? parseInt(thinkingBudget) : undefined;
 
             if (!prompt) {
                 alert('请输入提示词');
@@ -606,14 +670,33 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                 // 如果没有选择模型，使用默认模型
                 const finalModelName = modelName || 'google/gemini-2.5-flash';
                 
+                // 构建配置对象
+                const config = {};
+                if (temperatureValue !== undefined && !isNaN(temperatureValue)) {
+                    config.temperature = temperatureValue;
+                }
+                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue > 0) {
+                    config.thinkingConfig = {
+                        thinkingBudget: thinkingBudgetValue
+                    };
+                }
+                
                 const stream = await ai.models.generateContentStream({
                     model: finalModelName,
-                    contents: prompt
+                    contents: prompt,
+                    config: Object.keys(config).length > 0 ? config : undefined
                 });
 
                 // 清空输出并显示模型信息
                 output.className = 'output';
-                output.textContent = `使用的模型: ${finalModelName}\n\n生成的内容:\n`;
+                let headerText = `使用的模型: ${finalModelName}`;
+                if (temperatureValue !== undefined && !isNaN(temperatureValue)) {
+                    headerText += `\n温度值: ${temperatureValue}`;
+                }
+                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue > 0) {
+                    headerText += `\n思考预算: ${thinkingBudgetValue}`;
+                }
+                output.textContent = `${headerText}\n\n生成的内容:\n`;
 
                 // 流式处理响应
                 for await (const chunk of stream) {
@@ -901,6 +984,122 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
             }
         };
 
+        // JSON 输出测试 - 挂载到 window
+        window.testJsonOutput = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const prompt = document.getElementById('jsonPrompt').value.trim();
+            const modelSelect = document.getElementById('jsonModelSelect');
+            const modelInput = document.getElementById('jsonModel');
+            const thinkingBudgetInput = document.getElementById('jsonThinkingBudget');
+            
+            // 获取选中的模型名称
+            let modelName = '';
+            if (modelSelect.value === 'custom') {
+                // 自定义输入模式
+                modelName = modelInput.value.trim();
+            } else if (modelSelect.value) {
+                // 从下拉列表选择
+                modelName = modelSelect.value;
+            } else {
+                // 如果下拉列表为空，检查自定义输入框
+                modelName = modelInput.value.trim();
+            }
+
+            // 获取思考预算
+            const thinkingBudget = thinkingBudgetInput.value.trim();
+            const thinkingBudgetValue = thinkingBudget ? parseInt(thinkingBudget) : undefined;
+
+            if (!prompt) {
+                alert('请输入提示词');
+                return;
+            }
+
+            const output = document.getElementById('jsonOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.textContent = '正在生成 JSON 输出...';
+
+            try {
+                // 如果没有选择模型，使用默认模型
+                const finalModelName = modelName || 'google/gemini-2.5-flash';
+                
+                // 构建配置对象
+                const config = {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            persona: { type: Type.STRING },
+                            tags: { type: Type.ARRAY, items: { type: Type.STRING } }
+                        }
+                    }
+                };
+                
+                // 如果设置了思考预算，添加到配置中
+                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue > 0) {
+                    config.thinkingConfig = {
+                        thinkingBudget: thinkingBudgetValue
+                    };
+                }
+                
+                const response = await ai.models.generateContent({
+                    model: finalModelName,
+                    contents: prompt,
+                    config: config
+                });
+
+                const text = response.text || "";
+                let parsedJson = {};
+                let jsonError = null;
+                
+                try {
+                    parsedJson = JSON.parse(text.trim() || "{}");
+                } catch (e) {
+                    jsonError = e.message;
+                }
+
+                output.className = 'output success';
+                let outputHTML = `<strong>使用的模型: ${finalModelName}</strong>`;
+                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue > 0) {
+                    outputHTML += `<br><strong>思考预算:</strong> ${thinkingBudgetValue}`;
+                }
+                outputHTML += `<br><br><strong>原始 JSON 文本:</strong><br><pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">${text}</pre><br>`;
+                
+                if (jsonError) {
+                    outputHTML += `<strong style="color: #f44336;">JSON 解析错误:</strong> ${jsonError}<br>`;
+                } else {
+                    outputHTML += `<strong>解析后的 JSON 对象:</strong><br><pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(parsedJson, null, 2)}</pre><br>`;
+                }
+
+                // 显示 token 使用统计
+                if (response.usageMetadata) {
+                    const totalTokens = response.usageMetadata.totalTokenCount;
+                    const promptTokenCount = response.usageMetadata.promptTokenCount;
+                    const candidatesTokenCount = response.usageMetadata.candidatesTokenCount;
+                    
+                    outputHTML += `<br><strong>Token 使用统计:</strong><br>`;
+                    outputHTML += `总 Token 数: ${totalTokens}<br>`;
+                    if (promptTokenCount !== undefined) {
+                        outputHTML += `输入 Token 数: ${promptTokenCount}<br>`;
+                    }
+                    if (candidatesTokenCount !== undefined) {
+                        outputHTML += `输出 Token 数: ${candidatesTokenCount}<br>`;
+                    }
+                }
+
+                output.innerHTML = outputHTML;
+                console.log('JSON 输出结果:', { text, parsedJson, usageMetadata: response.usageMetadata });
+            } catch (error) {
+                output.className = 'output error';
+                output.innerHTML = '错误: ' + error.message + '<br><br><pre>' + error.stack + '</pre>';
+                console.error('JSON 输出测试错误:', error);
+            }
+        };
+
         // 更新模型下拉列表
         function updateModelSelect() {
             if (!ai) return;
@@ -1007,6 +1206,28 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                         searchModelSelect.value = currentSearchValue;
                     }
                 }
+                
+                // 更新 JSON 输出测试部分的模型下拉列表
+                const jsonModelSelect = document.getElementById('jsonModelSelect');
+                if (jsonModelSelect) {
+                    const currentJsonValue = jsonModelSelect.value;
+                    // 保留前三个选项（默认模型、分隔符和自定义选项）
+                    while (jsonModelSelect.options.length > 3) {
+                        jsonModelSelect.remove(3);
+                    }
+                    models.forEach(model => {
+                        // 检查是否已存在
+                        if (!Array.from(jsonModelSelect.options).some(opt => opt.value === model)) {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            jsonModelSelect.appendChild(option);
+                        }
+                    });
+                    if (currentJsonValue && Array.from(jsonModelSelect.options).some(opt => opt.value === currentJsonValue)) {
+                        jsonModelSelect.value = currentJsonValue;
+                    }
+                }
             } catch (error) {
                 console.error('更新模型列表错误:', error);
             }
@@ -1100,6 +1321,24 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                         searchModelInput.value = '';
                     } else {
                         searchModelInput.style.display = 'none';
+                    }
+                });
+            }
+            
+            // JSON 输出测试部分的模型选择器
+            const jsonModelSelect = document.getElementById('jsonModelSelect');
+            const jsonModelInput = document.getElementById('jsonModel');
+            
+            if (jsonModelSelect && jsonModelInput) {
+                jsonModelSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        jsonModelInput.style.display = 'block';
+                        jsonModelInput.focus();
+                    } else if (this.value) {
+                        jsonModelInput.style.display = 'none';
+                        jsonModelInput.value = '';
+                    } else {
+                        jsonModelInput.style.display = 'none';
                     }
                 });
             }
