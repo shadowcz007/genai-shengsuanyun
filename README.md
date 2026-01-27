@@ -61,7 +61,6 @@ npm install genai-shengsuanyun
 ### 支持的模型（必须使用以下之一或通过 `getSupportedModels()` 动态获取）
  
 **预定义支持模型列表：**
-- `google/gemini-2.5-flash-live`
 - `google/gemini-2.5-flash-lite`
 - `google/gemini-2.5-pro`
 - `google/gemini-2.5-flash`
@@ -571,7 +570,7 @@ const ai = new ExtendedGoogleGenAI({
 // 获取支持的模型
 const models = ai.getSupportedModels();
 console.log(models);
-// 输出: ['google/gemini-2.0-flash', 'google/gemini-2.5-flash-live', ...]
+// 输出: ['google/gemini-2.0-flash', ...]
 
 // 查询配额信息
 const quotaInfo = await ai.quota.getQuota();

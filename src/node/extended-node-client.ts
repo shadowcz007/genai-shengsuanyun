@@ -13,7 +13,6 @@ import {Quota} from '../quota.js';
  * Supported models list
  */
 const SUPPORTED_MODELS = [ 
-  'google/gemini-2.5-flash-live',
   'google/gemini-2.5-flash-lite',
   'google/gemini-2.5-pro',
   'google/gemini-2.5-flash',
