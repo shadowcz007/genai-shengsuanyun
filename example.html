@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>genai-shengsuanyun 测试示例</title>
+        <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        select option {
+            padding: 8px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .output {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output.success {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .output.error {
+            border-color: #f44336;
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .output.loading {
+            border-color: #ff9800;
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .models-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .model-item {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .status.success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+
+        .status.loading {
+            background: #ff9800;
+            color: white;
+        }
+    </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 genai-shengsuanyun 测试示例</h1>
+            <p class="subtitle">测试 ExtendedGoogleGenAI 的功能</p>
+
+            <!-- API Key 配置 -->
+            <div class="section">
+                <h2>1. 配置 API Key</h2>
+                <div class="input-group">
+                    <label for="apiKey">API Key:</label>
+                    <input type="text" id="apiKey"
+                        placeholder="请输入您的 API Key" />
+                </div>
+                <button onclick="saveApiKey()">保存 API Key</button>
+                <span id="apiKeyStatus"></span>
+            </div>
+
+            <!-- 获取支持的模型 -->
+            <div class="section">
+                <h2>2. 获取支持的模型列表</h2>
+                <p style="color: #666; margin-bottom: 15px;">获取所有预定义的模型列表</p>
+                <button onclick="getSupportedModels()">获取支持的模型</button>
+                <div id="modelsOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
+            <!-- 查询配额 -->
+            <div class="section">
+                <h2>3. 查询配额信息</h2>
+                <p style="color: #666; margin-bottom: 15px;">查询 API 配额和账单信息</p>
+                <button onclick="getQuota()">查询配额</button>
+                <div id="quotaOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
+            <!-- 生成内容测试 -->
+            <div class="section">
+                <h2>4. 生成内容测试</h2>
+                <div class="input-group">
+                    <label for="prompt">提示词:</label>
+                    <input type="text" id="prompt"
+                        placeholder="请输入提示词，例如：你好，请介绍一下自己" value="你好，请介绍一下自己" />
+                </div>
+                <div class="input-group">
+                    <label for="model">模型:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="modelSelect"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value>-- 选择模型或自定义输入 --</option>
+                            <option value="custom">[自定义输入]</option>
+                        </select>
+                        <input type="text" id="model" placeholder="留空使用默认模型"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; display: none;" />
+                    </div>
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">从支持的模型列表中选择，或选择"自定义输入"手动输入模型名称</small>
+                </div>
+                <button onclick="generateContent()">生成内容</button>
+                <div id="generateOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
+            <!-- 流式响应测试 -->
+            <div class="section">
+                <h2>5. 流式响应测试（推荐）</h2>
+                <p style="color: #666; margin-bottom: 15px;">使用流式响应实时获取生成内容</p>
+                <div class="input-group">
+                    <label for="streamPrompt">提示词:</label>
+                    <input type="text" id="streamPrompt"
+                        placeholder="请输入提示词，例如：解释量子计算的基本原理" value="解释量子计算的基本原理" />
+                </div>
+                <div class="input-group">
+                    <label for="streamModel">模型:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="streamModelSelect"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value>-- 选择模型或自定义输入 --</option>
+                            <option value="custom">[自定义输入]</option>
+                        </select>
+                        <input type="text" id="streamModel" placeholder="留空使用默认模型"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; display: none;" />
+                    </div>
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">从支持的模型列表中选择，或选择"自定义输入"手动输入模型名称</small>
+                </div>
+                <button onclick="generateContentStream()">开始流式生成</button>
+                <div id="streamOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
+            <!-- 函数调用测试 -->
+            <div class="section">
+                <h2>6. 函数调用测试</h2>
+                <p style="color: #666; margin-bottom: 15px;">测试 AI 模型的函数调用功能</p>
+                <div class="input-group">
+                    <label for="functionCallPrompt">提示词:</label>
+                    <input type="text" id="functionCallPrompt"
+                        placeholder="请输入提示词，例如：把灯调暗一点，让房间感觉温馨又温暖" value="把灯调暗一点，让房间感觉温馨又温暖" />
+                </div>
+                <div class="input-group">
+                    <label for="functionCallModel">模型:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="functionCallModelSelect"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value>-- 选择模型或自定义输入 --</option>
+                            <option value="custom">[自定义输入]</option>
+                        </select>
+                        <input type="text" id="functionCallModel" placeholder="留空使用默认模型"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; display: none;" />
+                    </div>
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">从支持的模型列表中选择，或选择"自定义输入"手动输入模型名称</small>
+                </div>
+                <button onclick="testFunctionCalling()">测试函数调用</button>
+                <div id="functionCallOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
+            <!-- 测试 BaseURL -->
+            <div class="section">
+                <h2>7. 验证 BaseURL</h2>
+                <p style="color: #666; margin-bottom: 15px;">验证默认 baseURL
+                    是否正确设置为 shengsuanyun 路由</p>
+                <button onclick="checkBaseUrl()">检查 BaseURL</button>
+                <div id="baseUrlOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+        </div>
+
+        <script type="importmap">
+    {
+        "imports": {
+            "@google/genai": "./node_modules/@google/genai/dist/web/index.mjs",
+            "@google/genai/web": "./node_modules/@google/genai/dist/web/index.mjs"
+        }
+    }
+    </script>
+
+        <script type="module">
+        import { ExtendedGoogleGenAI } from './dist/web/index.js';
+        
+        let ai = null;
+
+        // 保存 API Key 的核心函数
+        function saveApiKeyCore() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                showStatus('apiKeyStatus', '请输入 API Key', 'error');
+                return;
+            }
+
+            try {
+                ai = new ExtendedGoogleGenAI({
+                    apiKey: apiKey
+                });
+                showStatus('apiKeyStatus', '✓ API Key 已保存', 'success');
+                console.log('ExtendedGoogleGenAI 初始化成功');
+                
+                // API Key 保存成功后，更新模型下拉列表
+                updateModelSelect();
+            } catch (error) {
+                showStatus('apiKeyStatus', '✗ 初始化失败: ' + error.message, 'error');
+                console.error('初始化错误:', error);
+            }
+        }
+
+        // 挂载到 window 以便 onclick 可以访问，并保存到 localStorage
+        window.saveApiKey = function() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (apiKey) {
+                localStorage.setItem('genai_api_key', apiKey);
+            }
+            saveApiKeyCore();
+        };
+
+        // 获取支持的模型 - 挂载到 window
+        window.getSupportedModels = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const output = document.getElementById('modelsOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.textContent = '正在获取支持的模型...';
+
+            try {
+                const models = ai.getSupportedModels();
+                output.className = 'output success';
+                output.innerHTML = `
+<strong>支持的模型列表 (共 ${models.length} 个):</strong>
+
+${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
+                `.trim();
+                console.log('支持的模型:', models);
+                
+                // 更新生成内容测试部分的模型下拉列表
+                updateModelSelect();
+            } catch (error) {
+                output.className = 'output error';
+                output.textContent = '错误: ' + error.message;
+                console.error('获取模型列表错误:', error);
+            }
+        };
+
+        // 查询配额 - 挂载到 window
+        window.getQuota = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const output = document.getElementById('quotaOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.textContent = '正在查询配额信息...';
+
+            try {
+                const quotaInfo = await ai.quota.getQuota();
+                output.className = 'output success';
+                output.textContent = JSON.stringify(quotaInfo, null, 2);
+                console.log('配额信息:', quotaInfo);
+            } catch (error) {
+                output.className = 'output error';
+                output.textContent = '错误: ' + error.message + '\n\n' + error.stack;
+                console.error('查询配额错误:', error);
+            }
+        };
+
+        // 生成内容 - 挂载到 window
+        window.generateContent = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const prompt = document.getElementById('prompt').value.trim();
+            const modelSelect = document.getElementById('modelSelect');
+            const modelInput = document.getElementById('model');
+            
+            // 获取选中的模型名称
+            let modelName = '';
+            if (modelSelect.value === 'custom') {
+                // 自定义输入模式
+                modelName = modelInput.value.trim();
+            } else if (modelSelect.value) {
+                // 从下拉列表选择
+                modelName = modelSelect.value;
+            } else {
+                // 如果下拉列表为空，检查自定义输入框
+                modelName = modelInput.value.trim();
+            }
+
+            if (!prompt) {
+                alert('请输入提示词');
+                return;
+            }
+
+            const output = document.getElementById('generateOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.textContent = '正在生成内容...';
+
+            try {
+                // 如果没有选择模型，使用默认模型
+                const finalModelName = modelName || 'google/gemini-2.5-flash';
+               
+                const response = await ai.models.generateContent({
+                    model:finalModelName,
+                    contents:prompt,
+                  });
+                console.log(response.text);
+ 
+                const text = response.text;
+                output.className = 'output success';
+                output.textContent = `使用的模型: ${finalModelName}\n\n生成的内容:\n${text}`;
+                console.log('生成的内容:', text);
+            } catch (error) {
+                output.className = 'output error';
+                output.textContent = '错误: ' + error.message + '\n\n' + error.stack;
+                console.error('生成内容错误:', error);
+            }
+        };
+
+        // 流式生成内容 - 挂载到 window
+        window.generateContentStream = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const prompt = document.getElementById('streamPrompt').value.trim();
+            const modelSelect = document.getElementById('streamModelSelect');
+            const modelInput = document.getElementById('streamModel');
+            
+            // 获取选中的模型名称
+            let modelName = '';
+            if (modelSelect.value === 'custom') {
+                // 自定义输入模式
+                modelName = modelInput.value.trim();
+            } else if (modelSelect.value) {
+                // 从下拉列表选择
+                modelName = modelSelect.value;
+            } else {
+                // 如果下拉列表为空，检查自定义输入框
+                modelName = modelInput.value.trim();
+            }
+
+            if (!prompt) {
+                alert('请输入提示词');
+                return;
+            }
+
+            const output = document.getElementById('streamOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.textContent = '正在流式生成内容...\n\n';
+
+            try {
+                // 如果没有选择模型，使用默认模型
+                const finalModelName = modelName || 'google/gemini-2.5-flash';
+                
+                const stream = await ai.models.generateContentStream({
+                    model: finalModelName,
+                    contents: prompt
+                });
+
+                // 清空输出并显示模型信息
+                output.className = 'output';
+                output.textContent = `使用的模型: ${finalModelName}\n\n生成的内容:\n`;
+
+                // 流式处理响应
+                for await (const chunk of stream) {
+                    if (chunk.text) {
+                        // 追加文本内容
+                        const currentText = output.textContent;
+                        output.textContent = currentText + chunk.text;
+                        // 自动滚动到底部
+                        output.scrollTop = output.scrollHeight;
+                    }
+                }
+
+                // 完成后标记为成功
+                output.className = 'output success';
+                console.log('流式生成完成');
+            } catch (error) {
+                output.className = 'output error';
+                output.textContent = '错误: ' + error.message + '\n\n' + error.stack;
+                console.error('流式生成内容错误:', error);
+            }
+        };
+
+        // 函数调用测试 - 挂载到 window
+        window.testFunctionCalling = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const prompt = document.getElementById('functionCallPrompt').value.trim();
+            const modelSelect = document.getElementById('functionCallModelSelect');
+            const modelInput = document.getElementById('functionCallModel');
+            
+            // 获取选中的模型名称
+            let modelName = '';
+            if (modelSelect.value === 'custom') {
+                // 自定义输入模式
+                modelName = modelInput.value.trim();
+            } else if (modelSelect.value) {
+                // 从下拉列表选择
+                modelName = modelSelect.value;
+            } else {
+                // 如果下拉列表为空，检查自定义输入框
+                modelName = modelInput.value.trim();
+            }
+
+            if (!prompt) {
+                alert('请输入提示词');
+                return;
+            }
+
+            const output = document.getElementById('functionCallOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.textContent = '正在测试函数调用...';
+
+            try {
+                // 如果没有选择模型，使用默认模型
+                const finalModelName = modelName || 'google/gemini-2.5-flash';
+                
+                // 定义控制灯光的函数声明
+                const controlLightDeclaration = {
+                    name: 'controlLight',
+                    parametersJsonSchema: {
+                        type: 'object',
+                        properties: {
+                            brightness: { type: 'number' },
+                            colorTemperature: { type: 'string' },
+                        },
+                        required: ['brightness', 'colorTemperature'],
+                    },
+                };
+
+                const response = await ai.models.generateContent({
+                    model: finalModelName,
+                    contents: prompt,
+                    config: {
+                        toolConfig: {
+                            functionCallingConfig: {
+                                mode: FunctionCallingConfigMode.ANY,
+                                allowedFunctionNames: ['controlLight'],
+                            }
+                        },
+                        tools: [{ functionDeclarations: [controlLightDeclaration] }]
+                    }
+                });
+
+                output.className = 'output success';
+                const functionCalls = response.functionCalls || [];
+                
+                if (functionCalls.length > 0) {
+                    output.textContent = `使用的模型: ${finalModelName}\n\n函数调用结果:\n${JSON.stringify(functionCalls, null, 2)}`;
+                } else {
+                    output.textContent = `使用的模型: ${finalModelName}\n\n未检测到函数调用。\n\n响应文本: ${response.text || '无文本响应'}`;
+                }
+                
+                console.log('函数调用结果:', functionCalls);
+            } catch (error) {
+                output.className = 'output error';
+                output.textContent = '错误: ' + error.message + '\n\n' + error.stack;
+                console.error('函数调用测试错误:', error);
+            }
+        };
+
+        // 更新模型下拉列表
+        function updateModelSelect() {
+            if (!ai) return;
+            
+            try {
+                const models = ai.getSupportedModels();
+                
+                // 更新生成内容测试部分的模型下拉列表
+                const modelSelect = document.getElementById('modelSelect');
+                if (modelSelect) {
+                    const currentValue = modelSelect.value;
+                    while (modelSelect.options.length > 2) {
+                        modelSelect.remove(2);
+                    }
+                    models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        modelSelect.appendChild(option);
+                    });
+                    if (currentValue && Array.from(modelSelect.options).some(opt => opt.value === currentValue)) {
+                        modelSelect.value = currentValue;
+                    }
+                }
+                
+                // 更新流式响应测试部分的模型下拉列表
+                const streamModelSelect = document.getElementById('streamModelSelect');
+                if (streamModelSelect) {
+                    const currentStreamValue = streamModelSelect.value;
+                    while (streamModelSelect.options.length > 2) {
+                        streamModelSelect.remove(2);
+                    }
+                    models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        streamModelSelect.appendChild(option);
+                    });
+                    if (currentStreamValue && Array.from(streamModelSelect.options).some(opt => opt.value === currentStreamValue)) {
+                        streamModelSelect.value = currentStreamValue;
+                    }
+                }
+                
+                // 更新函数调用测试部分的模型下拉列表
+                const functionCallModelSelect = document.getElementById('functionCallModelSelect');
+                if (functionCallModelSelect) {
+                    const currentFunctionCallValue = functionCallModelSelect.value;
+                    while (functionCallModelSelect.options.length > 2) {
+                        functionCallModelSelect.remove(2);
+                    }
+                    models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        functionCallModelSelect.appendChild(option);
+                    });
+                    if (currentFunctionCallValue && Array.from(functionCallModelSelect.options).some(opt => opt.value === currentFunctionCallValue)) {
+                        functionCallModelSelect.value = currentFunctionCallValue;
+                    }
+                }
+            } catch (error) {
+                console.error('更新模型列表错误:', error);
+            }
+        }
+
+        // 处理模型选择变化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 生成内容测试部分的模型选择器
+            const modelSelect = document.getElementById('modelSelect');
+            const modelInput = document.getElementById('model');
+            
+            if (modelSelect && modelInput) {
+                modelSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        modelInput.style.display = 'block';
+                        modelInput.focus();
+                    } else if (this.value) {
+                        modelInput.style.display = 'none';
+                        modelInput.value = '';
+                    } else {
+                        modelInput.style.display = 'none';
+                    }
+                });
+            }
+            
+            // 流式响应测试部分的模型选择器
+            const streamModelSelect = document.getElementById('streamModelSelect');
+            const streamModelInput = document.getElementById('streamModel');
+            
+            if (streamModelSelect && streamModelInput) {
+                streamModelSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        streamModelInput.style.display = 'block';
+                        streamModelInput.focus();
+                    } else if (this.value) {
+                        streamModelInput.style.display = 'none';
+                        streamModelInput.value = '';
+                    } else {
+                        streamModelInput.style.display = 'none';
+                    }
+                });
+            }
+            
+            // 函数调用测试部分的模型选择器
+            const functionCallModelSelect = document.getElementById('functionCallModelSelect');
+            const functionCallModelInput = document.getElementById('functionCallModel');
+            
+            if (functionCallModelSelect && functionCallModelInput) {
+                functionCallModelSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        functionCallModelInput.style.display = 'block';
+                        functionCallModelInput.focus();
+                    } else if (this.value) {
+                        functionCallModelInput.style.display = 'none';
+                        functionCallModelInput.value = '';
+                    } else {
+                        functionCallModelInput.style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        // 检查 BaseURL - 挂载到 window
+        window.checkBaseUrl = function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const output = document.getElementById('baseUrlOutput');
+            output.style.display = 'block';
+
+            try {
+                // 通过访问 protected apiClient 来获取 baseURL
+                const apiClient = ai['apiClient'];
+                const baseUrl = apiClient ? apiClient.getBaseUrl() : '无法访问';
+                
+                output.className = 'output success';
+                output.textContent = `BaseURL: ${baseUrl}\n\n预期值: https://router.shengsuanyun.com/api/\n\n${baseUrl === 'https://router.shengsuanyun.com/api/' ? '✓ BaseURL 配置正确！' : '⚠ BaseURL 可能未正确设置'}`;
+                console.log('BaseURL:', baseUrl);
+            } catch (error) {
+                output.className = 'output error';
+                output.textContent = '错误: ' + error.message + '\n\n注意: 这可能是由于无法访问 protected 成员导致的。';
+                console.error('检查 BaseURL 错误:', error);
+            }
+        };
+
+        // 显示状态
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = 'status ' + type;
+            setTimeout(() => {
+                element.textContent = '';
+                element.className = '';
+            }, 3000);
+        }
+
+        // 从 localStorage 加载保存的 API Key
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                const savedApiKey = localStorage.getItem('genai_api_key');
+                if (savedApiKey) {
+                    document.getElementById('apiKey').value = savedApiKey;
+                }
+            });
+        } else {
+            // DOM 已经加载完成
+            const savedApiKey = localStorage.getItem('genai_api_key');
+            if (savedApiKey) {
+                document.getElementById('apiKey').value = savedApiKey;
+            }
+        }
+    </script>
+    </body>
+</html>

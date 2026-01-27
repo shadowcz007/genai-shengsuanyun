@@ -1,0 +1,61 @@
+{
+    "name": "genai-shengsuanyun",
+    "version": "1.0.1",
+    "description": "Extended Google GenAI SDK with custom baseURL and additional methods",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "homepage": "https://github.com/shadow-ai/genai-shengsuanyun",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/shadow-ai/genai-shengsuanyun.git"
+    },
+    "bugs": {
+        "url": "https://github.com/shadow-ai/genai-shengsuanyun/issues"
+    },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./node": {
+            "types": "./dist/node/index.d.ts",
+            "import": "./dist/node/index.js",
+            "default": "./dist/node/index.js"
+        },
+        "./web": {
+            "types": "./dist/web/index.d.ts",
+            "import": "./dist/web/index.js",
+            "default": "./dist/web/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "genai",
+        "gemini",
+        "google",
+        "ai",
+        "shengsuanyun"
+    ],
+    "author": "shadow",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "@google/genai": "^1.38.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.9.0",
+        "typescript": "^5.4.0"
+    },
+    "peerDependencies": {
+        "@google/genai": "^1.38.0"
+    }
+}

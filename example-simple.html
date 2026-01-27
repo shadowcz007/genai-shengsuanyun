@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>genai-shengsuanyun 简单测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>genai-shengsuanyun 测试</h1>
+        
+        <div class="input-group">
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" placeholder="输入您的 API Key" />
+        </div>
+
+        <button onclick="testModels()">1. 测试 getSupportedModels()</button>
+        <button onclick="testQuota()">2. 测试 getQuota()</button>
+        <button onclick="testGenerate()">3. 测试生成内容</button>
+
+        <div id="output" class="output" style="display:none;"></div>
+    </div>
+
+    <script type="module">
+        import { ExtendedGoogleGenAI } from './dist/web/index.js';
+
+        let ai = null;
+
+        function getApiKey() {
+            return document.getElementById('apiKey').value.trim();
+        }
+
+        function initAI() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                alert('请先输入 API Key');
+                return false;
+            }
+            if (!ai) {
+                ai = new ExtendedGoogleGenAI({ apiKey });
+            }
+            return true;
+        }
+
+        function showOutput(text, isError = false) {
+            const output = document.getElementById('output');
+            output.style.display = 'block';
+            output.className = 'output ' + (isError ? 'error' : 'success');
+            output.textContent = text;
+        }
+
+        window.testModels = function() {
+            if (!initAI()) return;
+            
+            showOutput('正在获取支持的模型...');
+            try {
+                const models = ai.getSupportedModels();
+                showOutput(`支持的模型 (共 ${models.length} 个):\n\n${models.join('\n')}`);
+            } catch (error) {
+                showOutput('错误: ' + error.message, true);
+            }
+        };
+
+        window.testQuota = async function() {
+            if (!initAI()) return;
+            
+            showOutput('正在查询配额...');
+            try {
+                const quota = await ai.quota.getQuota();
+                showOutput('配额信息:\n\n' + JSON.stringify(quota, null, 2));
+            } catch (error) {
+                showOutput('错误: ' + error.message + '\n\n' + error.stack, true);
+            }
+        };
+
+        window.testGenerate = async function() {
+            if (!initAI()) return;
+            
+            showOutput('正在生成内容...');
+            try {
+                const model = ai.models.get({ model: 'google/gemini-2.5-flash' });
+                const response = await model.generateContent({
+                    contents: [{ role: 'user', parts: [{ text: '你好，请用一句话介绍自己' }] }]
+                });
+                showOutput('生成的内容:\n\n' + response.response.text());
+            } catch (error) {
+                showOutput('错误: ' + error.message + '\n\n' + error.stack, true);
+            }
+        };
+    </script>
+</body>
+</html>
