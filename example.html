@@ -294,10 +294,10 @@
                 </div>
                 <div class="input-group">
                     <label for="streamThinkingBudget">思考预算 (可选):</label>
-                    <input type="number" id="streamThinkingBudget" min="0" max="10000" step="100" placeholder="1000"
+                    <input type="number" id="streamThinkingBudget" min="512" max="24576" step="1" placeholder="1000"
                         style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;" />
                     <small
-                        style="color: #666; margin-top: 5px; display: block;">思考预算控制模型思考过程的 token 数量。值越大思考越深入，输出质量通常更好，但会消耗更多 token。推荐值：500-2000。留空则不使用思考功能。</small>
+                        style="color: #666; margin-top: 5px; display: block;">思考预算控制模型思考过程的 token 数量。取值范围：512-24576（整数）。值越大思考越深入，输出质量通常更好，但会消耗更多 token。推荐值：1000-2000。留空则不使用思考功能。</small>
                 </div>
                 <button onclick="generateContentStream()">开始流式生成</button>
                 <div id="streamOutput" class="output"
@@ -427,19 +427,57 @@
                 </div>
                 <div class="input-group">
                     <label for="jsonThinkingBudget">思考预算 (可选):</label>
-                    <input type="number" id="jsonThinkingBudget" min="0" max="10000" step="100" placeholder="1000"
+                    <input type="number" id="jsonThinkingBudget" min="512" max="24576" step="1" placeholder="1000"
                         style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;" />
                     <small
-                        style="color: #666; margin-top: 5px; display: block;">思考预算控制模型思考过程的 token 数量。值越大思考越深入，输出质量通常更好，但会消耗更多 token。推荐值：500-2000。留空则不使用思考功能。</small>
+                        style="color: #666; margin-top: 5px; display: block;">思考预算控制模型思考过程的 token 数量。取值范围：512-24576（整数）。值越大思考越深入，输出质量通常更好，但会消耗更多 token。推荐值：1000-2000。留空则不使用思考功能。</small>
                 </div>
                 <button onclick="testJsonOutput()">测试 JSON 输出</button>
                 <div id="jsonOutput" class="output"
                     style="display: none;"></div>
             </div>
 
+            <!-- OCR 图像识别测试 -->
+            <div class="section">
+                <h2>10. OCR 图像识别测试</h2>
+                <p style="color: #666; margin-bottom: 15px;">使用图像输入和 JSON 输出进行 OCR，提取图片中的文本内容并按区域分类</p>
+                <div class="input-group">
+                    <label for="ocrImage">上传图片:</label>
+                    <input type="file" id="ocrImage" accept="image/*"
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;" />
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">支持 PNG、JPEG、GIF 等常见图片格式</small>
+                </div>
+                <div class="input-group">
+                    <label for="ocrModel">模型:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="ocrModelSelect"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="google/gemini-2.5-flash" selected>google/gemini-2.5-flash</option>
+                            <option value>-- 选择模型或自定义输入 --</option>
+                            <option value="custom">[自定义输入]</option>
+                        </select>
+                        <input type="text" id="ocrModel" placeholder="留空使用默认模型"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; display: none;" />
+                    </div>
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">从支持的模型列表中选择，或选择"自定义输入"手动输入模型名称</small>
+                </div>
+                <div class="input-group">
+                    <label for="ocrThinkingBudget">思考预算 (可选):</label>
+                    <input type="number" id="ocrThinkingBudget" min="512" max="24576" step="1" placeholder="2000"
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;" />
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">思考预算控制模型思考过程的 token 数量。取值范围：512-24576（整数）。推荐值：1000-2000。留空则不使用思考功能。</small>
+                </div>
+                <button onclick="testOCR()">开始 OCR 识别</button>
+                <div id="ocrOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
             <!-- 测试 BaseURL -->
             <div class="section">
-                <h2>10. 验证 BaseURL</h2>
+                <h2>11. 验证 BaseURL</h2>
                 <p style="color: #666; margin-bottom: 15px;">验证默认 baseURL
                     是否正确设置为 shengsuanyun 路由</p>
                 <button onclick="checkBaseUrl()">检查 BaseURL</button>
@@ -675,7 +713,7 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                 if (temperatureValue !== undefined && !isNaN(temperatureValue)) {
                     config.temperature = temperatureValue;
                 }
-                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue > 0) {
+                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue >= 512 && thinkingBudgetValue <= 24576) {
                     config.thinkingConfig = {
                         thinkingBudget: thinkingBudgetValue
                     };
@@ -693,7 +731,7 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                 if (temperatureValue !== undefined && !isNaN(temperatureValue)) {
                     headerText += `\n温度值: ${temperatureValue}`;
                 }
-                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue > 0) {
+                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue >= 512 && thinkingBudgetValue <= 24576) {
                     headerText += `\n思考预算: ${thinkingBudgetValue}`;
                 }
                 output.textContent = `${headerText}\n\n生成的内容:\n`;
@@ -1013,6 +1051,14 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
             const thinkingBudget = thinkingBudgetInput.value.trim();
             const thinkingBudgetValue = thinkingBudget ? parseInt(thinkingBudget) : undefined;
 
+            // 验证思考预算范围
+            if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue)) {
+                if (thinkingBudgetValue < 512 || thinkingBudgetValue > 24576) {
+                    alert('思考预算必须在 512-24576 之间（整数）');
+                    return;
+                }
+            }
+
             if (!prompt) {
                 alert('请输入提示词');
                 return;
@@ -1040,7 +1086,7 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                 };
                 
                 // 如果设置了思考预算，添加到配置中
-                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue > 0) {
+                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue >= 512 && thinkingBudgetValue <= 24576) {
                     config.thinkingConfig = {
                         thinkingBudget: thinkingBudgetValue
                     };
@@ -1064,7 +1110,7 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
 
                 output.className = 'output success';
                 let outputHTML = `<strong>使用的模型: ${finalModelName}</strong>`;
-                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue > 0) {
+                if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue >= 512 && thinkingBudgetValue <= 24576) {
                     outputHTML += `<br><strong>思考预算:</strong> ${thinkingBudgetValue}`;
                 }
                 outputHTML += `<br><br><strong>原始 JSON 文本:</strong><br><pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">${text}</pre><br>`;
@@ -1097,6 +1143,211 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                 output.className = 'output error';
                 output.innerHTML = '错误: ' + error.message + '<br><br><pre>' + error.stack + '</pre>';
                 console.error('JSON 输出测试错误:', error);
+            }
+        };
+
+        // 辅助函数：获取 MIME 类型
+        function getMimeType(base64) {
+            if (base64.startsWith('data:')) {
+                const match = base64.match(/data:([^;]+);/);
+                return match ? match[1] : 'image/png';
+            }
+            return 'image/png';
+        }
+
+        // 辅助函数：清理 base64 数据（移除 data URI 前缀）
+        function cleanBase64(base64) {
+            return base64.replace(/^data:[^;]+;base64,/, '');
+        }
+
+        // OCR 图像识别测试 - 挂载到 window
+        window.testOCR = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const imageInput = document.getElementById('ocrImage');
+            const modelSelect = document.getElementById('ocrModelSelect');
+            const modelInput = document.getElementById('ocrModel');
+            const thinkingBudgetInput = document.getElementById('ocrThinkingBudget');
+            
+            if (!imageInput.files || imageInput.files.length === 0) {
+                alert('请选择要识别的图片');
+                return;
+            }
+
+            // 获取选中的模型名称
+            let modelName = '';
+            if (modelSelect.value === 'custom') {
+                modelName = modelInput.value.trim();
+            } else if (modelSelect.value) {
+                modelName = modelSelect.value;
+            } else {
+                modelName = modelInput.value.trim();
+            }
+
+            // 获取思考预算
+            const thinkingBudget = thinkingBudgetInput.value.trim();
+            const thinkingBudgetValue = thinkingBudget ? parseInt(thinkingBudget) : undefined;
+
+            // 验证思考预算范围
+            if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue)) {
+                if (thinkingBudgetValue < 512 || thinkingBudgetValue > 24576) {
+                    alert('思考预算必须在 512-24576 之间（整数）');
+                    return;
+                }
+            }
+
+            const output = document.getElementById('ocrOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.textContent = '正在读取图片并生成 OCR 结果...';
+
+            try {
+                // 读取文件并转换为 base64
+                const file = imageInput.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = async function(e) {
+                    try {
+                        const base64Image = e.target.result;
+                        const mimeType = getMimeType(base64Image);
+                        const imageData = cleanBase64(base64Image);
+
+                        // 如果没有选择模型，使用默认模型
+                        const finalModelName = modelName || 'google/gemini-2.5-flash';
+
+                        // 定义响应 schema
+                        const schema = {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    text: { 
+                                        type: Type.STRING,
+                                        description: "该区域的文本内容。重要：如果区域是表格(table)，必须返回标准的 Markdown 表格格式。如果是列表，必须返回 Markdown 列表格式。"
+                                    },
+                                    box_2d: {
+                                        type: Type.ARRAY,
+                                        items: { type: Type.INTEGER },
+                                        description: "[ymin, xmin, ymax, xmax] 坐标。"
+                                    },
+                                    type: {
+                                        type: Type.STRING,
+                                        description: "区域类型：'text', 'heading', 'image', 'table'。"
+                                    }
+                                },
+                                required: ["text", "box_2d", "type"]
+                            }
+                        };
+
+                        // 构建配置对象
+                        const config = {
+                            responseMimeType: "application/json",
+                            responseSchema: schema
+                        };
+
+                        if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue >= 512 && thinkingBudgetValue <= 24576) {
+                            config.thinkingConfig = {
+                                thinkingBudget: thinkingBudgetValue
+                            };
+                        }
+
+                        const stream = await ai.models.generateContentStream({
+                            model: finalModelName,
+                            contents: {
+                                parts: [
+                                    {
+                                        text: `你是一位视觉拓扑专家。提取图片内容并按逻辑顺序排列 JSON。坐标系为 [0-1000]。
+                                        
+                                        要求：
+                                        1. 准确识别区域类型（heading, text, image, table）。
+                                        2. 对于 'table' 类型，text 字段内容**必须**是 Markdown 表格格式。
+                                        3. 对于列表内容，text 字段内容请使用 Markdown 列表格式 (- item 或 1. item)。
+                                        4. 请确保返回完整的 JSON 数组。`,
+                                    },
+                                    {
+                                        inlineData: {
+                                            data: imageData,
+                                            mimeType: mimeType,
+                                        },
+                                    },
+                                ],
+                            },
+                            config: config
+                        });
+
+                        // 清空输出并显示模型信息
+                        output.className = 'output';
+                        let headerText = `使用的模型: ${finalModelName}`;
+                        if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue >= 512 && thinkingBudgetValue <= 24576) {
+                            headerText += `\n思考预算: ${thinkingBudgetValue}`;
+                        }
+                        output.textContent = `${headerText}\n\n正在识别图片内容...\n\n`;
+
+                        // 流式处理响应
+                        let fullText = "";
+                        for await (const chunk of stream) {
+                            if (chunk.text) {
+                                fullText += chunk.text;
+                                // 实时更新显示
+                                output.textContent = `${headerText}\n\n正在识别图片内容...\n\n${fullText}`;
+                                output.scrollTop = output.scrollHeight;
+                            }
+                        }
+
+                        // 解析 JSON 结果
+                        let regions = [];
+                        let parseError = null;
+                        try {
+                            regions = JSON.parse(fullText.trim() || "[]");
+                        } catch (e) {
+                            parseError = e.message;
+                        }
+
+                        output.className = 'output success';
+                        let outputHTML = `<strong>使用的模型: ${finalModelName}</strong>`;
+                        if (thinkingBudgetValue !== undefined && !isNaN(thinkingBudgetValue) && thinkingBudgetValue >= 512 && thinkingBudgetValue <= 24576) {
+                            outputHTML += `<br><strong>思考预算:</strong> ${thinkingBudgetValue}`;
+                        }
+                        outputHTML += `<br><br><strong>识别的区域数量:</strong> ${regions.length}<br><br>`;
+
+                        if (parseError) {
+                            outputHTML += `<strong style="color: #f44336;">JSON 解析错误:</strong> ${parseError}<br><br>`;
+                            outputHTML += `<strong>原始响应:</strong><br><pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 300px;">${fullText}</pre>`;
+                        } else {
+                            outputHTML += `<strong>识别结果:</strong><br>`;
+                            regions.forEach((region, index) => {
+                                outputHTML += `<div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px;">`;
+                                outputHTML += `<strong>区域 ${index + 1} (${region.type}):</strong><br>`;
+                                outputHTML += `<strong>坐标:</strong> [${region.box_2d.join(', ')}]<br>`;
+                                outputHTML += `<strong>文本内容:</strong><br><pre style="white-space: pre-wrap; word-wrap: break-word;">${region.text}</pre>`;
+                                outputHTML += `</div>`;
+                            });
+                            outputHTML += `<br><strong>完整 JSON 数据:</strong><br><pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 300px;">${JSON.stringify(regions, null, 2)}</pre>`;
+                        }
+
+                        output.innerHTML = outputHTML;
+                        console.log('OCR 识别结果:', { regions, fullText });
+                    } catch (error) {
+                        output.className = 'output error';
+                        output.innerHTML = '错误: ' + error.message + '<br><br><pre>' + error.stack + '</pre>';
+                        console.error('OCR 识别错误:', error);
+                    }
+                };
+
+                reader.onerror = function(error) {
+                    output.className = 'output error';
+                    output.textContent = '读取图片文件失败: ' + error.message;
+                    console.error('读取文件错误:', error);
+                };
+
+                reader.readAsDataURL(file);
+            } catch (error) {
+                output.className = 'output error';
+                output.innerHTML = '错误: ' + error.message + '<br><br><pre>' + error.stack + '</pre>';
+                console.error('OCR 测试错误:', error);
             }
         };
 
@@ -1228,6 +1479,28 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                         jsonModelSelect.value = currentJsonValue;
                     }
                 }
+                
+                // 更新 OCR 测试部分的模型下拉列表
+                const ocrModelSelect = document.getElementById('ocrModelSelect');
+                if (ocrModelSelect) {
+                    const currentOcrValue = ocrModelSelect.value;
+                    // 保留前三个选项（默认模型、分隔符和自定义选项）
+                    while (ocrModelSelect.options.length > 3) {
+                        ocrModelSelect.remove(3);
+                    }
+                    models.forEach(model => {
+                        // 检查是否已存在
+                        if (!Array.from(ocrModelSelect.options).some(opt => opt.value === model)) {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            ocrModelSelect.appendChild(option);
+                        }
+                    });
+                    if (currentOcrValue && Array.from(ocrModelSelect.options).some(opt => opt.value === currentOcrValue)) {
+                        ocrModelSelect.value = currentOcrValue;
+                    }
+                }
             } catch (error) {
                 console.error('更新模型列表错误:', error);
             }
@@ -1339,6 +1612,24 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                         jsonModelInput.value = '';
                     } else {
                         jsonModelInput.style.display = 'none';
+                    }
+                });
+            }
+            
+            // OCR 测试部分的模型选择器
+            const ocrModelSelect = document.getElementById('ocrModelSelect');
+            const ocrModelInput = document.getElementById('ocrModel');
+            
+            if (ocrModelSelect && ocrModelInput) {
+                ocrModelSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        ocrModelInput.style.display = 'block';
+                        ocrModelInput.focus();
+                    } else if (this.value) {
+                        ocrModelInput.style.display = 'none';
+                        ocrModelInput.value = '';
+                    } else {
+                        ocrModelInput.style.display = 'none';
                     }
                 });
             }

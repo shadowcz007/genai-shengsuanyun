@@ -85,11 +85,18 @@ const ai = new ExtendedGoogleGenAI({
 
 const response = await ai.models.generateContent({
   model: 'google/gemini-2.5-flash',
-  contents: '写一首关于春天的诗。'
+  contents: '写一首关于春天的诗。',
+  config: {
+    thinkingConfig: {
+      thinkingBudget: 1000  // 可选：思考预算，取值范围 512-24576（整数），用于提高输出质量
+    }
+  }
 });
 
 console.log(response.text);
 ```
+
+> **提示**：`thinkingConfig.thinkingBudget` 可用于任何生成任务，通过增加思考过程来提高输出质量，特别适用于需要深度分析、重写或优化的场景。取值范围：`512-24576`（整数）。
 
 ### 流式响应（推荐）
 
@@ -104,7 +111,10 @@ const stream = await ai.models.generateContentStream({
   model: 'google/gemini-2.5-flash',
   contents: '解释量子计算的基本原理。',
   config: {
-    temperature: 0.1  // 温度值：0.0-2.0，值越低输出越确定，值越高输出越随机
+    temperature: 0.1,  // 温度值：0.0-2.0，值越低输出越确定，值越高输出越随机
+    thinkingConfig: {
+      thinkingBudget: 1000  // 可选：思考预算，取值范围 512-24576（整数），用于提高输出质量
+    }
   }
 });
 
@@ -202,6 +212,9 @@ const response = await ai.models.generateContent({
         persona: { type: Type.STRING },
         tags: { type: Type.ARRAY, items: { type: Type.STRING } }
       }
+    },
+    thinkingConfig: {
+      thinkingBudget: 1000  // 思考预算：取值范围 512-24576（整数），控制模型思考过程的 token 数量，值越大思考越深入
     }
   }
 });
@@ -209,6 +222,118 @@ const response = await ai.models.generateContent({
 const result = JSON.parse(response.text.trim() || "{}");
 console.log(result);
 // 输出示例: { persona: "前端开发工程师，专注于现代框架和性能优化", tags: ["React", "TypeScript", "Vue", ...] }
+```
+
+> **思考预算（thinkingBudget）说明**：
+> - `thinkingBudget` 控制模型在生成响应前的思考过程
+> - **取值范围**：`512-24576`（整数），超出范围会报错
+> - 值越大，模型思考越深入，输出质量通常更好，但会消耗更多 token
+> - 推荐值：`1000-2000`，根据任务复杂度调整
+> - 适用于需要高质量输出的场景，如复杂分析、重写、优化等任务
+
+### OCR 图像识别
+
+使用图像输入和 JSON 输出进行 OCR（光学字符识别），提取图片中的文本内容并按区域分类：
+
+```typescript
+import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
+import { Type } from '@google/genai';
+
+const ai = new ExtendedGoogleGenAI({ 
+  apiKey: process.env.SSY_API_KEY 
+});
+
+// 辅助函数：获取 MIME 类型
+function getMimeType(base64: string): string {
+  if (base64.startsWith('data:')) {
+    const match = base64.match(/data:([^;]+);/);
+    return match ? match[1] : 'image/png';
+  }
+  return 'image/png';
+}
+
+// 辅助函数：清理 base64 数据（移除 data URI 前缀）
+function cleanBase64(base64: string): string {
+  return base64.replace(/^data:[^;]+;base64,/, '');
+}
+
+// 定义响应 schema
+const schema = {
+  type: Type.ARRAY,
+  items: {
+    type: Type.OBJECT,
+    properties: {
+      text: { 
+        type: Type.STRING,
+        description: "该区域的文本内容。重要：如果区域是表格(table)，必须返回标准的 Markdown 表格格式。如果是列表，必须返回 Markdown 列表格式。"
+      },
+      box_2d: {
+        type: Type.ARRAY,
+        items: { type: Type.INTEGER },
+        description: "[ymin, xmin, ymax, xmax] 坐标。"
+      },
+      type: {
+        type: Type.STRING,
+        description: "区域类型：'text', 'heading', 'image', 'table'。"
+      }
+    },
+    required: ["text", "box_2d", "type"]
+  }
+};
+
+// base64 编码的图片数据
+const base64Image = "data:image/png;base64,iVBORw0KGgoAAAANS..."; // 你的图片 base64 数据
+const mimeType = getMimeType(base64Image);
+const imageData = cleanBase64(base64Image);
+
+const stream = await ai.models.generateContentStream({
+  model: 'google/gemini-2.5-flash',
+  contents: {
+    parts: [
+      {
+        text: `你是一位视觉拓扑专家。提取图片内容并按逻辑顺序排列 JSON。坐标系为 [0-1000]。
+        
+        要求：
+        1. 准确识别区域类型（heading, text, image, table）。
+        2. 对于 'table' 类型，text 字段内容**必须**是 Markdown 表格格式。
+        3. 对于列表内容，text 字段内容请使用 Markdown 列表格式 (- item 或 1. item)。
+        4. 请确保返回完整的 JSON 数组。`,
+      },
+      {
+        inlineData: {
+          data: imageData,
+          mimeType: mimeType,
+        },
+      },
+    ],
+  },
+  config: {
+    responseMimeType: "application/json",
+    responseSchema: schema,
+    thinkingConfig: { 
+      thinkingBudget: 2000  // 取值范围：512-24576
+    }
+  }
+});
+
+// 流式处理响应
+let fullText = "";
+for await (const chunk of stream) {
+  if (chunk.text) {
+    fullText += chunk.text;
+  }
+}
+
+// 解析 JSON 结果
+const regions = JSON.parse(fullText.trim() || "[]");
+console.log('识别的区域数量:', regions.length);
+regions.forEach((region, index) => {
+  console.log(`区域 ${index + 1}:`, {
+    type: region.type,
+    text: region.text.substring(0, 50) + '...',
+    box: region.box_2d
+  });
+});
 ```
 
 ---
