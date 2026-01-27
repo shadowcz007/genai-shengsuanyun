@@ -102,12 +102,113 @@ const ai = new ExtendedGoogleGenAI({
 
 const stream = await ai.models.generateContentStream({
   model: 'google/gemini-2.5-flash',
-  contents: '解释量子计算的基本原理。'
+  contents: '解释量子计算的基本原理。',
+  config: {
+    temperature: 0.1  // 温度值：0.0-2.0，值越低输出越确定，值越高输出越随机
+  }
 });
 
 for await (const chunk of stream) {
   process.stdout.write(chunk.text);
 }
+```
+
+> **温度值说明**：`temperature` 参数控制输出的随机性
+> - `0.0-0.3`：更确定、更聚焦的输出，适合事实性任务
+> - `0.4-0.7`：平衡的创造性和准确性
+> - `0.8-2.0`：更随机、更有创造性的输出，适合创意任务
+
+### 图像生成
+
+使用 `google/gemini-2.5-flash-image` 或 `google/gemini-3-pro-image-preview` 模型生成图像：
+
+```typescript
+import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
+
+const ai = new ExtendedGoogleGenAI({ 
+  apiKey: process.env.SSY_API_KEY 
+});
+
+// 基于 JSON 数据构建提示词
+const data = {
+  title: '数据可视化报告',
+  subtitle: '2024 年度总结',
+  colorTheme: '蓝色渐变'
+};
+
+const prompt = `Create a high-quality, flat-design infographic poster image based on this data structure. 
+Style: Minimalist, professional, ${data.colorTheme} color scheme.
+Title: ${data.title}
+Subtitle: ${data.subtitle}
+Content Summary: ${JSON.stringify(data).slice(0, 1000)}...`; // 截断以避免超出 token 限制
+
+const response = await ai.models.generateContent({
+  model: 'google/gemini-2.5-flash-image', // 确保使用正确的图像模型
+  contents: {
+    parts: [
+      { text: prompt }
+    ]
+  },
+  config: {
+    responseModalities: ['IMAGE'],
+    // tools: [{googleSearch: {}}],
+  }
+});
+
+// 从响应中提取图像
+if (response.candidates?.[0]?.content?.parts) {
+  for (const part of response.candidates[0].content.parts) {
+    if (part.inlineData && part.inlineData.data) {
+      const imageDataUri = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      console.log('图像生成成功，数据 URI 长度:', imageDataUri.length);
+      // 在浏览器中可以直接使用：<img src={imageDataUri} />
+      return imageDataUri;
+    }
+  }
+}
+```
+
+### JSON 输出
+
+使用 `responseMimeType` 和 `responseSchema` 让模型返回结构化的 JSON 数据：
+
+```typescript
+import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
+import { Type } from '@google/genai';
+
+const ai = new ExtendedGoogleGenAI({ 
+  apiKey: process.env.SSY_API_KEY 
+});
+
+const prompt = `分析用户的技术情报偏好。输入是用户最近的点击、复制和编辑记录：
+[点击] React 性能优化
+[复制] TypeScript 最佳实践
+[编辑] Vue 3 组合式 API
+
+任务：
+1. 用一句话描述用户的"专业画像"（Persona）。
+2. 提取 10 个用户最关心的"核心技术关键词（中文）"，用于未来的内容推荐。
+
+仅返回 JSON 格式。`;
+
+const response = await ai.models.generateContent({
+  model: 'google/gemini-2.5-flash',
+  contents: prompt,
+  config: {
+    responseMimeType: "application/json",
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        persona: { type: Type.STRING },
+        tags: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
+    }
+  }
+});
+
+const result = JSON.parse(response.text.trim() || "{}");
+console.log(result);
+// 输出示例: { persona: "前端开发工程师，专注于现代框架和性能优化", tags: ["React", "TypeScript", "Vue", ...] }
 ```
 
 ---
@@ -187,6 +288,75 @@ const response = await ai.models.generateContent({
 console.log(response.text);
 
 await client.close();
+```
+
+#### Google 搜索工具
+
+启用 Google 搜索工具，让模型可以搜索实时信息并返回来源链接：
+
+```typescript
+import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
+
+const ai = new ExtendedGoogleGenAI({ 
+  apiKey: process.env.SSY_API_KEY 
+});
+
+const response = await ai.models.generateContent({
+  model: 'google/gemini-2.5-flash',
+  contents: '2024年最新的AI技术趋势是什么？',
+  config: {
+    tools: [{ googleSearch: {} }]
+  }
+});
+
+const text = response.text || "";
+
+// 从响应中提取搜索来源
+const sources = [];
+const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+if (chunks) {
+  chunks.forEach((chunk: any) => {
+    if (chunk.web) {
+      sources.push({ 
+        uri: chunk.web.uri, 
+        title: chunk.web.title 
+      });
+    }
+  });
+}
+
+console.log('回答:', text);
+console.log('来源:', sources);
+// 来源示例: [{ uri: 'https://example.com', title: 'Example Title' }]
+```
+
+---
+### Token统计和计算
+
+生成内容后，可以从响应对象的 `usageMetadata` 中获取实际的 token 使用统计：
+
+```typescript
+import { ExtendedGoogleGenAI } from 'genai-shengsuanyun';
+
+const ai = new ExtendedGoogleGenAI({ 
+  apiKey: process.env.SSY_API_KEY 
+});
+
+const response = await ai.models.generateContent({
+  model: 'google/gemini-2.5-flash',
+  contents: '解释量子计算的基本原理。',
+});
+
+// 获取 token 使用统计
+if (response.usageMetadata) {
+  const totalTokens = response.usageMetadata.totalTokenCount;
+  const promptTokenCount = response.usageMetadata.promptTokenCount;
+  const candidatesTokenCount = response.usageMetadata.candidatesTokenCount;
+  
+  console.log(`总 Token 数: ${totalTokens}`);
+  console.log(`输入 Token 数: ${promptTokenCount}`);
+  console.log(`输出 Token 数: ${candidatesTokenCount}`);
+}
 ```
 
 ---

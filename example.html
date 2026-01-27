@@ -186,6 +186,18 @@
             background: #ff9800;
             color: white;
         }
+
+        .generated-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            margin-top: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            font-family: inherit;
+        }
     </style>
     </head>
     <body>
@@ -273,6 +285,13 @@
                     <small
                         style="color: #666; margin-top: 5px; display: block;">从支持的模型列表中选择，或选择"自定义输入"手动输入模型名称</small>
                 </div>
+                <div class="input-group">
+                    <label for="streamTemperature">温度值 (可选):</label>
+                    <input type="number" id="streamTemperature" min="0" max="2" step="0.1" placeholder="0.1"
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;" />
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">温度值范围：0.0-2.0。值越低输出越确定（推荐 0.1-0.3），值越高输出越随机（推荐 0.8-2.0）。留空使用默认值。</small>
+                </div>
                 <button onclick="generateContentStream()">开始流式生成</button>
                 <div id="streamOutput" class="output"
                     style="display: none;"></div>
@@ -306,9 +325,68 @@
                     style="display: none;"></div>
             </div>
 
+            <!-- 图像生成测试 -->
+            <div class="section">
+                <h2>7. 图像生成测试</h2>
+                <p style="color: #666; margin-bottom: 15px;">使用 Gemini 图像生成模型创建图像</p>
+                <div class="input-group">
+                    <label for="imagePrompt">提示词:</label>
+                    <textarea id="imagePrompt" rows="4"
+                        style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical;"
+                        placeholder="请输入图像生成提示词，例如：Create a high-quality, flat-design infographic poster image. Style: Minimalist, professional, blue gradient color scheme. Title: 数据可视化报告. Subtitle: 2024 年度总结">Create a high-quality, flat-design infographic poster image. Style: Minimalist, professional, blue gradient color scheme. Title: 数据可视化报告. Subtitle: 2024 年度总结</textarea>
+                </div>
+                <div class="input-group">
+                    <label for="imageModel">模型:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="imageModelSelect"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="google/gemini-2.5-flash-image" selected>google/gemini-2.5-flash-image</option>
+                            <option value="google/gemini-3-pro-image-preview">google/gemini-3-pro-image-preview</option>
+                            <option value="custom">[自定义输入]</option>
+                        </select>
+                        <input type="text" id="imageModel" placeholder="留空使用默认模型"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; display: none;" />
+                    </div>
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">选择图像生成模型，或选择"自定义输入"手动输入模型名称</small>
+                </div>
+                <button onclick="generateImage()">生成图像</button>
+                <div id="imageOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
+            <!-- Google 搜索工具测试 -->
+            <div class="section">
+                <h2>8. Google 搜索工具测试</h2>
+                <p style="color: #666; margin-bottom: 15px;">启用 Google 搜索工具，让模型可以搜索实时信息并返回来源链接</p>
+                <div class="input-group">
+                    <label for="searchPrompt">提示词:</label>
+                    <input type="text" id="searchPrompt"
+                        placeholder="请输入需要搜索的问题，例如：2024年最新的AI技术趋势是什么？" value="2024年最新的AI技术趋势是什么？" />
+                </div>
+                <div class="input-group">
+                    <label for="searchModel">模型:</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="searchModelSelect"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: white;">
+                            <option value="google/gemini-2.5-flash" selected>google/gemini-2.5-flash</option>
+                            <option value>-- 选择模型或自定义输入 --</option>
+                            <option value="custom">[自定义输入]</option>
+                        </select>
+                        <input type="text" id="searchModel" placeholder="留空使用默认模型"
+                            style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; display: none;" />
+                    </div>
+                    <small
+                        style="color: #666; margin-top: 5px; display: block;">从支持的模型列表中选择，或选择"自定义输入"手动输入模型名称</small>
+                </div>
+                <button onclick="testGoogleSearch()">测试搜索工具</button>
+                <div id="searchOutput" class="output"
+                    style="display: none;"></div>
+            </div>
+
             <!-- 测试 BaseURL -->
             <div class="section">
-                <h2>7. 验证 BaseURL</h2>
+                <h2>9. 验证 BaseURL</h2>
                 <p style="color: #666; margin-bottom: 15px;">验证默认 baseURL
                     是否正确设置为 shengsuanyun 路由</p>
                 <button onclick="checkBaseUrl()">检查 BaseURL</button>
@@ -466,6 +544,23 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                 output.className = 'output success';
                 output.textContent = `使用的模型: ${finalModelName}\n\n生成的内容:\n${text}`;
                 console.log('生成的内容:', text);
+
+                // 从响应中获取 token 使用统计
+                if (response.usageMetadata) {
+                    const totalTokens = response.usageMetadata.totalTokenCount;
+                    const promptTokenCount = response.usageMetadata.promptTokenCount;
+                    const candidatesTokenCount = response.usageMetadata.candidatesTokenCount;
+                    
+                    output.textContent += `\n\nToken 使用统计:`;
+                    output.textContent += `\n总 Token 数: ${totalTokens}`;
+                    if (promptTokenCount !== undefined) {
+                        output.textContent += `\n输入 Token 数: ${promptTokenCount}`;
+                    }
+                    if (candidatesTokenCount !== undefined) {
+                        output.textContent += `\n输出 Token 数: ${candidatesTokenCount}`;
+                    }
+                }
+
             } catch (error) {
                 output.className = 'output error';
                 output.textContent = '错误: ' + error.message + '\n\n' + error.stack;
@@ -623,6 +718,189 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
             }
         };
 
+        // 图像生成测试 - 挂载到 window
+        window.generateImage = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const prompt = document.getElementById('imagePrompt').value.trim();
+            const modelSelect = document.getElementById('imageModelSelect');
+            const modelInput = document.getElementById('imageModel');
+            
+            // 获取选中的模型名称
+            let modelName = '';
+            if (modelSelect.value === 'custom') {
+                // 自定义输入模式
+                modelName = modelInput.value.trim();
+            } else if (modelSelect.value) {
+                // 从下拉列表选择
+                modelName = modelSelect.value;
+            } else {
+                // 如果下拉列表为空，检查自定义输入框
+                modelName = modelInput.value.trim();
+            }
+
+            if (!prompt) {
+                alert('请输入图像生成提示词');
+                return;
+            }
+
+            const output = document.getElementById('imageOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.innerHTML = '正在生成图像...';
+
+            try {
+                // 如果没有选择模型，使用默认图像生成模型
+                const finalModelName = modelName || 'google/gemini-2.5-flash-image';
+                
+                const response = await ai.models.generateContent({
+                    model: finalModelName,
+                    contents: {
+                        parts: [
+                            { text: prompt }
+                        ]
+                    },
+                    config: {
+                        responseModalities: ['IMAGE'],
+                    }
+                });
+
+                // 从响应中提取图像
+                let imageDataUri = null;
+                if (response.candidates?.[0]?.content?.parts) {
+                    for (const part of response.candidates[0].content.parts) {
+                        if (part.inlineData && part.inlineData.data) {
+                            imageDataUri = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                            break;
+                        }
+                    }
+                }
+
+                if (imageDataUri) {
+                    output.className = 'output success';
+                    output.innerHTML = `
+                        <strong>使用的模型: ${finalModelName}</strong>
+                        <br><br>
+                        <img src="${imageDataUri}" alt="生成的图像" class="generated-image" />
+                        <br><br>
+                        <small style="color: #666;">图像生成成功！数据 URI 长度: ${imageDataUri.length} 字符</small>
+                    `;
+                    console.log('图像生成成功，数据 URI 长度:', imageDataUri.length);
+                } else {
+                    output.className = 'output error';
+                    output.innerHTML = `使用的模型: ${finalModelName}<br><br>未找到图像数据。响应内容:<br><pre>${JSON.stringify(response, null, 2)}</pre>`;
+                    console.warn('未找到图像数据，完整响应:', response);
+                }
+            } catch (error) {
+                output.className = 'output error';
+                output.innerHTML = '错误: ' + error.message + '<br><br><pre>' + error.stack + '</pre>';
+                console.error('图像生成错误:', error);
+            }
+        };
+
+        // Google 搜索工具测试 - 挂载到 window
+        window.testGoogleSearch = async function() {
+            if (!ai) {
+                alert('请先配置 API Key');
+                return;
+            }
+
+            const prompt = document.getElementById('searchPrompt').value.trim();
+            const modelSelect = document.getElementById('searchModelSelect');
+            const modelInput = document.getElementById('searchModel');
+            
+            // 获取选中的模型名称
+            let modelName = '';
+            if (modelSelect.value === 'custom') {
+                // 自定义输入模式
+                modelName = modelInput.value.trim();
+            } else if (modelSelect.value) {
+                // 从下拉列表选择
+                modelName = modelSelect.value;
+            } else {
+                // 如果下拉列表为空，检查自定义输入框
+                modelName = modelInput.value.trim();
+            }
+
+            if (!prompt) {
+                alert('请输入需要搜索的问题');
+                return;
+            }
+
+            const output = document.getElementById('searchOutput');
+            output.style.display = 'block';
+            output.className = 'output loading';
+            output.textContent = '正在搜索并生成内容...';
+
+            try {
+                // 如果没有选择模型，使用默认模型
+                const finalModelName = modelName || 'google/gemini-2.5-flash';
+                
+                const response = await ai.models.generateContent({
+                    model: finalModelName,
+                    contents: prompt,
+                    config: {
+                        tools: [{ googleSearch: {} }]
+                    }
+                });
+
+                const text = response.text || "";
+                
+                // 从响应中提取搜索来源
+                const sources = [];
+                const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+                if (chunks) {
+                    chunks.forEach((chunk) => {
+                        if (chunk.web) {
+                            sources.push({ 
+                                uri: chunk.web.uri, 
+                                title: chunk.web.title 
+                            });
+                        }
+                    });
+                }
+
+                output.className = 'output success';
+                let outputHTML = `<strong>使用的模型: ${finalModelName}</strong><br><br>`;
+                outputHTML += `<strong>回答:</strong><br>${text.replace(/\n/g, '<br>')}<br><br>`;
+                
+                if (sources.length > 0) {
+                    outputHTML += `<strong>来源链接 (${sources.length} 个):</strong><br>`;
+                    sources.forEach((source, index) => {
+                        outputHTML += `${index + 1}. <a href="${source.uri}" target="_blank" rel="noopener noreferrer">${source.title || source.uri}</a><br>`;
+                    });
+                } else {
+                    outputHTML += `<em>未找到来源链接</em><br>`;
+                }
+
+                // 显示 token 使用统计
+                if (response.usageMetadata) {
+                    const totalTokens = response.usageMetadata.totalTokenCount;
+                    const promptTokenCount = response.usageMetadata.promptTokenCount;
+                    const candidatesTokenCount = response.usageMetadata.candidatesTokenCount;
+                    
+                    outputHTML += `<br><strong>Token 使用统计:</strong><br>`;
+                    outputHTML += `总 Token 数: ${totalTokens}<br>`;
+                    if (promptTokenCount !== undefined) {
+                        outputHTML += `输入 Token 数: ${promptTokenCount}<br>`;
+                    }
+                    if (candidatesTokenCount !== undefined) {
+                        outputHTML += `输出 Token 数: ${candidatesTokenCount}<br>`;
+                    }
+                }
+
+                output.innerHTML = outputHTML;
+                console.log('搜索工具结果:', { text, sources, usageMetadata: response.usageMetadata });
+            } catch (error) {
+                output.className = 'output error';
+                output.innerHTML = '错误: ' + error.message + '<br><br><pre>' + error.stack + '</pre>';
+                console.error('搜索工具测试错误:', error);
+            }
+        };
+
         // 更新模型下拉列表
         function updateModelSelect() {
             if (!ai) return;
@@ -683,6 +961,52 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                         functionCallModelSelect.value = currentFunctionCallValue;
                     }
                 }
+                
+                // 更新图像生成测试部分的模型下拉列表
+                const imageModelSelect = document.getElementById('imageModelSelect');
+                if (imageModelSelect) {
+                    const currentImageValue = imageModelSelect.value;
+                    // 保留前三个选项（两个图像模型选项和自定义选项）
+                    while (imageModelSelect.options.length > 3) {
+                        imageModelSelect.remove(3);
+                    }
+                    // 只添加图像生成相关的模型
+                    const imageModels = models.filter(model => model.includes('image'));
+                    imageModels.forEach(model => {
+                        // 检查是否已存在
+                        if (!Array.from(imageModelSelect.options).some(opt => opt.value === model)) {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            imageModelSelect.appendChild(option);
+                        }
+                    });
+                    if (currentImageValue && Array.from(imageModelSelect.options).some(opt => opt.value === currentImageValue)) {
+                        imageModelSelect.value = currentImageValue;
+                    }
+                }
+                
+                // 更新搜索工具测试部分的模型下拉列表
+                const searchModelSelect = document.getElementById('searchModelSelect');
+                if (searchModelSelect) {
+                    const currentSearchValue = searchModelSelect.value;
+                    // 保留前三个选项（默认模型、分隔符和自定义选项）
+                    while (searchModelSelect.options.length > 3) {
+                        searchModelSelect.remove(3);
+                    }
+                    models.forEach(model => {
+                        // 检查是否已存在
+                        if (!Array.from(searchModelSelect.options).some(opt => opt.value === model)) {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            searchModelSelect.appendChild(option);
+                        }
+                    });
+                    if (currentSearchValue && Array.from(searchModelSelect.options).some(opt => opt.value === currentSearchValue)) {
+                        searchModelSelect.value = currentSearchValue;
+                    }
+                }
             } catch (error) {
                 console.error('更新模型列表错误:', error);
             }
@@ -740,6 +1064,42 @@ ${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}
                         functionCallModelInput.value = '';
                     } else {
                         functionCallModelInput.style.display = 'none';
+                    }
+                });
+            }
+            
+            // 图像生成测试部分的模型选择器
+            const imageModelSelect = document.getElementById('imageModelSelect');
+            const imageModelInput = document.getElementById('imageModel');
+            
+            if (imageModelSelect && imageModelInput) {
+                imageModelSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        imageModelInput.style.display = 'block';
+                        imageModelInput.focus();
+                    } else if (this.value) {
+                        imageModelInput.style.display = 'none';
+                        imageModelInput.value = '';
+                    } else {
+                        imageModelInput.style.display = 'none';
+                    }
+                });
+            }
+            
+            // 搜索工具测试部分的模型选择器
+            const searchModelSelect = document.getElementById('searchModelSelect');
+            const searchModelInput = document.getElementById('searchModel');
+            
+            if (searchModelSelect && searchModelInput) {
+                searchModelSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        searchModelInput.style.display = 'block';
+                        searchModelInput.focus();
+                    } else if (this.value) {
+                        searchModelInput.style.display = 'none';
+                        searchModelInput.value = '';
+                    } else {
+                        searchModelInput.style.display = 'none';
                     }
                 });
             }
