@@ -70,15 +70,9 @@ npm install genai-shengsuanyun
 ### 支持的模型（必须使用以下之一或通过 `getSupportedModels()` 动态获取）
  
 **预定义支持模型列表：**
-- `google/gemini-2.5-flash-lite`
-- `google/gemini-2.5-pro`
-- `google/gemini-2.5-flash`
 - `google/gemini-3-pro-preview`
 - `google/gemini-3-flash`
-- `google/gemini-2.5-flash-image`
 - `google/gemini-3-pro-image-preview`
-
-> ⚠️ 不要使用 `gemini-1.5` 系列等已弃用模型。
 
 ---
 

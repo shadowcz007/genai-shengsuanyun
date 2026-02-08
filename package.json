@@ -1,6 +1,6 @@
 {
     "name": "genai-shengsuanyun",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Extended Google GenAI SDK with custom baseURL and additional methods",
     "type": "module",
     "main": "./dist/index.js",
